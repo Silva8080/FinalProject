@@ -2,7 +2,10 @@
 .venv/
 __pycache__/
 *.pyc
+
+# Generated data (rebuilt by the import scripts)
 *.db
+backend/data/
 
 # Editor / OS
 .idea/
