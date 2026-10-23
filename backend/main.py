@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import re
 app = FastAPI(title="English Immersion API")
 
 # CORS: lets the Chrome extension call this API
@@ -33,10 +34,15 @@ DICTIONARY = {
 def root():
     return {"message": "API is running"}
 
-
+def normalize(text: str) -> str:
+    text = text.lower()
+    text = text.replace("’", "'")           # curly apostrophe -> straight
+    text = re.sub(r"[^\w\s']", "", text)    # remove everything except letters, digits, spaces, '
+    return " ".join(text.split())           # trim and collapse repeated spaces
 @app.get("/lookup", response_model=LookupResult)
 def lookup(word: str):
-    entry = DICTIONARY.get(word)
+    clean = normalize(word)
+    entry = DICTIONARY.get(clean)
     if entry is None:
         raise HTTPException(status_code=404, detail="Word not found")
-    return {"word": word, **entry}
+    return {"word": clean, **entry}
