@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import re
+import sqlite3
+from pathlib import Path
 app = FastAPI(title="English Immersion API")
 
 # CORS: lets the Chrome extension call this API
@@ -19,17 +21,17 @@ class LookupResult(BaseModel):
     meaning: str
     type: str
 
-
-# Fake dictionary (Stage 1). Moves to SQLite in Stage 3.
-DICTIONARY = {
-    "give up": {"meaning": "諦める", "type": "phrasal verb"},
-    "hang out": {"meaning": "遊ぶ", "type": "phrasal verb"},
-    "gonna": {"meaning": "〜するつもり", "type": "contraction"},
-    "no way": {"meaning": "マジで！？", "type": "idiom"},
-    "hello": {"meaning": "こんにちは", "type": "interjection"},
-}
+DB_PATH = Path(__file__).parent / "database" / "dictionary.db"
 
 
+def find_word(word: str):
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        return conn.execute(
+            "SELECT meaning, type FROM entries WHERE word = ?", (word,)
+        ).fetchone()
+    finally:
+        conn.close()
 @app.get("/")
 def root():
     return {"message": "API is running"}
@@ -42,7 +44,8 @@ def normalize(text: str) -> str:
 @app.get("/lookup", response_model=LookupResult)
 def lookup(word: str):
     clean = normalize(word)
-    entry = DICTIONARY.get(clean)
-    if entry is None:
+    row = find_word(clean)
+    if row is None:
         raise HTTPException(status_code=404, detail="Word not found")
-    return {"word": clean, **entry}
+    meaning, word_type = row
+    return {"word": clean, "meaning": meaning, "type": word_type}
