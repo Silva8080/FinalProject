@@ -1,5 +1,5 @@
-import httpx
+import spacy
 
-r = httpx.post("http://127.0.0.1:8765", json={"action": "version", "version": 6})
-print(httpx.post("http://127.0.0.1:8765", json={"action": "deckNames", "version": 6}).json())
-print(httpx.post("http://127.0.0.1:8765", json={"action": "modelNames", "version": 6}).json())
+nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
+for text in ["gave up", "running", "dogs", "hanging out", "went"]:
+    print(text, "->", " ".join(t.lemma_ for t in nlp(text)))

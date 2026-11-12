@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from text_utils import normalize
 from anki import AnkiError, add_card
+from lemmatizer import lemmatize
 
 app = FastAPI(title="EasyRead API")
 
@@ -92,12 +93,20 @@ def find_examples(word: str):
 
 @app.get("/lookup", response_model=LookupResult)
 def lookup(word: str):
-    # Example: /lookup?word=Give up! is searched as "give up"
-    # 例: /lookup?word=Give up! → "give up" として検索する
     clean = normalize(word)
+
+    # 1) Exact match first (fast) / まず完全一致で検索する（速い）
     senses = find_senses(clean)
+
+    # 2) On a miss, retry with the lemma / 見つからなければ見出し語に直して再検索する
     if not senses:
-        # Not in the dictionary: 404 / 辞書にない場合は404を返す
+        lemma = normalize(lemmatize(clean))
+        if lemma != clean:
+            senses = find_senses(lemma)
+            if senses:
+                clean = lemma   # return the entry that was actually found
+
+    if not senses:
         raise HTTPException(status_code=404, detail="Word not found")
     return {
         "word": clean,
