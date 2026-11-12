@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from text_utils import normalize
+from anki import AnkiError, add_card
 
 app = FastAPI(title="EasyRead API")
 
@@ -103,3 +104,31 @@ def lookup(word: str):
         "senses": senses,
         "examples": find_examples(clean),
     }
+
+# Request body sent by the extension / 拡張機能が送るリクエストの形
+class AnkiCard(BaseModel):
+    word: str
+    meaning: str
+    sentence: str = ""
+
+
+# Response / レスポンスの形
+class AnkiResult(BaseModel):
+    status: str
+    note_id: int
+
+
+@app.post("/anki/add", response_model=AnkiResult)
+def anki_add(card: AnkiCard):
+    try:
+        note_id = add_card(card.word, card.meaning, card.sentence)
+    except AnkiError as e:
+        message = str(e)
+        # Anki not open -> 503, duplicate card -> 409, anything else -> 400
+        # Ankiが閉じている -> 503、重複 -> 409、その他 -> 400
+        if "Cannot connect" in message:
+            raise HTTPException(status_code=503, detail=message)
+        if "duplicate" in message.lower():
+            raise HTTPException(status_code=409, detail="Card already exists")
+        raise HTTPException(status_code=400, detail=message)
+    return {"status": "ok", "note_id": note_id}
