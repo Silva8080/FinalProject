@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "EasyRead",
+  "version": "1.0",
+  "description": "EasyRead Chrome Extension",
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8000/*"
+  ]
+}
