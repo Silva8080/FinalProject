@@ -114,10 +114,15 @@ def lookup(word: str):
         "examples": find_examples(clean),
     }
 
-# Request body sent by the extension / 拡張機能が送るリクエストの形
+# Request body sent by the extension
+# 拡張機能が送るリクエストの形
 class AnkiCard(BaseModel):
+    # The English word or phrase / 英単語またはフレーズ
     word: str
+    # Japanese meaning to put on the back of the card / カードの裏面に入れる日本語の意味
     meaning: str
+    # Example sentence; optional. If empty, the first example from the DB is used
+    # 例文（省略可）。空の場合はDBの最初の例文を使う
     sentence: str = ""
 
 
@@ -129,8 +134,16 @@ class AnkiResult(BaseModel):
 
 @app.post("/anki/add", response_model=AnkiResult)
 def anki_add(card: AnkiCard):
+    # If no sentence was sent, use the first example from the database
+    # 例文が送られてこなかった場合は、DBの最初の例文を使う
+    sentence = card.sentence
+    if not sentence:
+        examples = find_examples(normalize(card.word))
+        if examples:
+            sentence = f"{examples[0]['english']}<br>{examples[0]['japanese']}"
+
     try:
-        note_id = add_card(card.word, card.meaning, card.sentence)
+        note_id = add_card(card.word, card.meaning, sentence)
     except AnkiError as e:
         message = str(e)
         # Anki not open -> 503, duplicate card -> 409, anything else -> 400
