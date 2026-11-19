@@ -4,6 +4,8 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
+from wordfreq import zipf_frequency
+
 from text_utils import normalize
 
 # Paths to the JMdict file and the output database
@@ -21,6 +23,12 @@ MAX_SENSES = 4
 # Skip glosses longer than this many words (they are explanations, not words)
 # これより長い語義は説明文なので除外する(単語数)
 MAX_WORDS = 4
+# Minimum common entries needed before rare ones are dropped
+# 珍しい語を除外するために必要な、一般的な語の最小数
+MIN_COMMON = 1
+# Senses tagged with these are formal, old, rude or rare: rank them lower
+# 敬語・古語・俗語・まれな語の意味は順位を下げる
+BAD_MISC = {"hum", "hon", "pol", "arch", "obs", "obsc", "rare", "derog", "vulg", "sl"}
 
 
 def simple_type(pos_tags):
@@ -55,9 +63,13 @@ def clean_gloss(text):
     Turn an English gloss into a lookup key. Returns None if unusable.
     英語の語義を検索用のキーに変換する。使えない場合は None を返す。
     """
-    # Remove notes in parentheses
-    # 括弧内の補足を削除する
-    text = re.sub(r"\([^)]*\)", "", text)
+    # Remove (notes), including nested parentheses
+    # 括弧内の補足を削除する（入れ子の括弧にも対応）
+    while True:
+        new_text = re.sub(r"\([^()]*\)", "", text)
+        if new_text == text:
+            break
+        text = new_text
     text = text.lower().strip()
     # "to give up" -> "give up"
     # 先頭の "to " を削除する
@@ -71,6 +83,17 @@ def clean_gloss(text):
     if not text or len(text.split()) > MAX_WORDS:
         return None
     return text
+
+
+# Cache of Japanese word -> frequency score (higher = more common)
+# 日本語 -> 頻度スコアのキャッシュ（大きいほど一般的）
+_freq_cache = {}
+
+
+def freq(japanese):
+    if japanese not in _freq_cache:
+        _freq_cache[japanese] = zipf_frequency(japanese, "ja")
+    return _freq_cache[japanese]
 
 
 def main():
@@ -114,13 +137,35 @@ def main():
                 key = clean_gloss(gloss["text"])
                 if key is None:
                     continue
-                # Lower rank = better (common first, then earlier senses)
-                # 順位は小さいほど上位(一般的な語が先、次に前の意味が先)
-                rank = (0 if common else 1, sense_index, gloss_index)
+
+                # Penalize formal, old, rude or rare senses
+                # 敬語・古語・俗語・まれな意味は順位を下げる
+                penalty = 1 if BAD_MISC & set(sense.get("misc", [])) else 0
+                # Primary meaning: this English word is the first gloss of the first sense
+                # 主な意味: この英語が最初の意味の最初の語義である
+                # Formal/rare senses are never primary matches
+                # 敬語・まれな意味は「主な意味」にしない
+                tier = 0 if (sense_index == 0 and gloss_index == 0 and penalty == 0) else 1
+                # Lower rank = better
+                # 順位は小さいほど上位
+                rank = (
+                    0 if common else 1,   # [0] common first / 一般的な語が先
+                    penalty,              # [1] formal/rare last / 敬語・まれな語は後
+                    tier,                 # [2] primary meaning first / 主な意味が先
+                    -freq(japanese),      # [3] negative so common words sort first
+                    sense_index,          # [4]
+                    gloss_index,          # [5]
+                )
                 candidates[key].append((rank, word_type, japanese))
 
     rows = []
     for key, items in candidates.items():
+        # If there are enough common entries, drop the rare ones
+        # 一般的な語が十分あれば、珍しい語は除外する
+        common_items = [it for it in items if it[0][0] == 0]
+        if len(common_items) >= MIN_COMMON:
+            items = common_items
+
         # Group the Japanese words by part of speech
         # 日本語を品詞ごとにグループ化する
         groups = defaultdict(list)
@@ -130,6 +175,11 @@ def main():
         built = []
         for word_type, entries in groups.items():
             entries.sort(key=lambda x: x[0])
+
+            # NEW: if some entries are primary matches (tier 0), drop the incidental ones
+            # NEW: 主な意味の一致(tier 0)があれば、偶然一致しただけの語は除外する
+            if any(e[0][2] == 0 for e in entries):
+                entries = [e for e in entries if e[0][2] == 0]
 
             # Remove duplicates and keep at most MAX_MEANINGS
             # 重複を除き、最大 MAX_MEANINGS 個まで残す
@@ -144,6 +194,11 @@ def main():
         # Best-ranked group first
         # 順位が良いグループを先頭にする
         built.sort(key=lambda x: x[0])
+
+        # NEW: drop groups that only match incidentally when a primary group exists
+        # NEW: 主な意味のグループがあれば、偶然一致しただけのグループは除外する
+        if any(b[0][2] == 0 for b in built):
+            built = [b for b in built if b[0][2] == 0]
 
         for position, (_, word_type, meanings) in enumerate(built[:MAX_SENSES]):
             # Rough guess: a multi-word verb key is a phrasal verb (refine later)

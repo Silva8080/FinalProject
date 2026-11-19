@@ -9,6 +9,38 @@ DB_PATH = Path(__file__).parent / "database" / "dictionary.db"
 # Format: word -> list of (type, [meanings]), best sense first.
 ENTRIES = {
     "give up": [("phrasal verb", ["諦める", "やめる", "降参する"])],
+    "dog": [("noun", ["犬", "イヌ", "わんこ"])],
+    "break": [
+        ("verb", ["壊す", "割る", "折る", "壊れる"]),
+        ("verb", ["中断する", "破る"]),
+        ("noun", ["休憩", "小休止", "チャンス"]),
+    ],
+    "give away": [
+        ("phrasal verb", ["無料で配る", "あげる", "譲る"]),
+        ("phrasal verb", ["うっかり漏らす", "暴露する"]),
+    ],
+    "go off": [
+        ("phrasal verb", ["爆発する", "鳴り出す"]),
+        ("phrasal verb", ["立ち去る", "腐る"]),
+    ],
+    "make it": [
+        ("phrasal verb", ["間に合う", "成功する", "うまくいく"]),
+    ],
+    "come over": [
+        ("phrasal verb", ["遊びに来る", "立ち寄る"]),
+    ],
+    "gotta": [("contraction", ["〜しなきゃ", "〜しなければならない"])],
+    "kinda": [("contraction", ["ちょっと", "なんか〜っぽい", "まあ"])],
+    "lemme": [("contraction", ["〜させて", "ちょっと〜させて"])],
+    "ain't": [("contraction", ["〜じゃない", "〜ではない"])],
+    "give me a break": [("expression", ["勘弁してよ", "いい加減にして", "冗談でしょ"])],
+    "give us a break": [("expression", ["勘弁してよ", "いい加減にして"])],
+    "get": [
+        ("verb", ["手に入れる", "得る", "もらう", "買う"]),  # obtain / receive
+        ("verb", ["〜になる", "〜してくる"]),  # become
+        ("verb", ["着く", "到着する"]),  # arrive
+        ("verb", ["わかる", "理解する"]),  # understand
+    ],
     "hang out": [("phrasal verb", ["遊ぶ", "たむろする", "一緒に過ごす"])],
     "gonna": [("contraction", ["〜するつもり", "〜しようとしている"])],
     "wanna": [("contraction", ["〜したい"])],
