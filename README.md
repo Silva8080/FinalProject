@@ -19,8 +19,10 @@ Frontend teammates do not need to run the backend. You can build against the sam
 
 ### 1. Download the data (not stored in Git)
 
+The data files are large and are listed in `.gitignore`. Never commit them.
+
 - **JMdict (English):** download the English JSON from the jmdict-simplified releases on GitHub (by scriptin). Save it as `backend/data/jmdict-eng.json`.
-- **Tatoeba sentence pairs (optional):** download `jpn-eng.zip` from manythings.org, unzip it, and save the text file as `backend/data/jpn-eng.txt`. Without it, `examples` is always an empty list.
+- **Tatoeba sentence pairs (optional):** download `jpn-eng.zip` from manythings.org, unzip it, and save the text file as `backend/data/jpn-eng.txt`. Without it, automatic examples are not generated (curated examples still work).
 
 ### 2. Install and build the database
 
@@ -29,14 +31,30 @@ cd backend
 uv sync
 uv run python import_jmdict.py
 uv run python seed.py
-uv run python import_examples.py    # only if you downloaded the Tatoeba file
+uv run python import_examples.py
+uv run python seed_examples.py
 ```
 
-`uv sync` also installs spaCy and its English model (`en_core_web_sm`), which are used for lemmatization.
+Run the scripts **in this order**. Each one depends on the one before it:
 
-Run the scripts in this order. `import_jmdict.py` rebuilds the `senses` table from scratch, so run `seed.py` right after it (your hand-written entries replace the automatic ones). Re-run them whenever the data changes.
+| Script | What it does |
+| --- | --- |
+| `import_jmdict.py` | Builds the `senses` table from JMdict (English to Japanese). Rebuilds the table from scratch. |
+| `seed.py` | Hand-written senses. They replace the automatic ones for the same word. Also adds phrasal verbs, idioms, and slang that JMdict lacks. |
+| `import_examples.py` | Builds the `examples` table from Tatoeba. It reads the words from `senses`, and rebuilds the table from scratch. Skip it if you do not have the Tatoeba file. |
+| `seed_examples.py` | Hand-written example sentences. They replace the automatic ones for the same word. |
 
-### 3. Start the server
+Re-run the whole sequence whenever any data or script changes. `uv sync` also installs spaCy and its English model (`en_core_web_sm`) for lemmatization, and `wordfreq` for ranking.
+
+### 3. Check coverage (optional)
+
+```
+uv run python check_coverage.py
+```
+
+Lists common phrases that are missing from the dictionary, or that have fewer than 3 example sentences. Add them to `seed.py` and `seed_examples.py`, rebuild, and run it again. Add new phrases to the `CANDIDATES` list in the script.
+
+### 4. Start the server
 
 ```
 uv run uvicorn main:app --reload
@@ -45,6 +63,12 @@ uv run uvicorn main:app --reload
 The first start is a little slower because the spaCy model is loaded once at startup.
 
 The API runs at http://127.0.0.1:8000 and the interactive docs are at http://127.0.0.1:8000/docs
+
+## Data
+
+- **Automatic data:** JMdict is Japanese to English, so the import inverts it. This works well for concrete nouns and poorly for core verbs (`get`, `go`, `take`, `make`) and for phrasal verbs, idioms, and slang, which JMdict barely contains.
+- **Curated data:** `seed.py` and `seed_examples.py` hold hand-written entries for those words. Japanese in these files should be checked by a native speaker before release.
+- **Examples:** Tatoeba sentences are matched by exact word form, and the longest known phrase wins (a sentence with "give up" is saved under `give up`, not `give`). Different meanings of the same word are not distinguished in automatic examples.
 
 ## API
 
@@ -63,14 +87,16 @@ Looks up an English word or phrase.
     { "type": "noun", "meanings": ["ラケット"] }
   ],
   "examples": [
-    { "english": "Choose your favorite racket.", "japanese": "好きなラケットを選びなさい。" }
+    { "english": "You have the same racket as I have.", "japanese": "君は僕と同じラケットを持っている。" },
+    { "english": "Tom laid his racket on the ground.", "japanese": "トムはラケットを地面に置いた。" },
+    { "english": "I bought this racket at a 20 percent discount.", "japanese": "私はこのラケットを２０％引きで買った。" }
   ]
 }
 ```
 
 - `word`: the dictionary entry that was found, not the raw input. The input is normalized first (lowercase, punctuation removed). If there is no exact match, the word is converted to its base form (lemma) and searched again. For example, `Give up!` returns `give up`, and `gave up` also returns `give up`. `running` returns `run`.
 - `senses`: a list of meaning groups, best first. Each has a part-of-speech `type` and a list of Japanese `meanings`.
-- `examples`: up to 3 example sentences with Japanese translations. It can be an empty list `[]` (for rare words, or when the Tatoeba data is not installed), so the popup must handle that.
+- `examples`: up to 3 example sentences with Japanese translations. It can be an empty list `[]` (for rare words or phrases), so the popup must handle that.
 
 404 Not Found (word not in the dictionary):
 
@@ -81,7 +107,7 @@ Looks up an English word or phrase.
 Limitations (for now):
 
 - The lemmatizer works on single words or short phrases without context, so it can be wrong for ambiguous words (for example, `left`).
-- Finding phrases inside a whole sentence is not supported yet. Send one word or phrase per request.
+- Finding phrases inside a whole sentence is not supported yet. Hovering `give` in "I won't give up" returns `give`, not `give up`. Send one word or phrase per request.
 - Example sentences only match the exact form of the word. `give up` finds "Don't give up." but not "He gave up."
 
 ### POST /anki/add
@@ -128,13 +154,20 @@ Card format: deck `EasyRead`, note type `Basic`. Front is the word. Back is the 
 
 - Add `http://127.0.0.1:8000/*` to `host_permissions` in `manifest.json`.
 - CORS is already allowed in the backend.
+- Calling the API from the background service worker (and passing the result to the content script with `chrome.runtime.sendMessage`) is the safest approach.
 
 ### Changing the API
 
 If the JSON shape changes, tell the team first. Changes can break the extension.
+
+## Git notes
+
+- Never commit `backend/data/`, `*.db`, `.venv/`, or `__pycache__/`. They are in `.gitignore`. GitHub rejects files over 100 MB.
+- Run `git pull` before you start work and before you push.
 
 ## Credits
 
 - Dictionary data: JMdict/EDRDG, licensed under CC BY-SA 4.0 (https://www.edrdg.org/). Accessed through the jmdict-simplified project.
 - Example sentences: Tatoeba (https://tatoeba.org/), licensed under CC BY 2.0 FR.
 - Lemmatization: spaCy (https://spacy.io/) with the `en_core_web_sm` model.
+- Word frequency: wordfreq (https://github.com/rspeer/wordfreq).
