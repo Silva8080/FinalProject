@@ -6,7 +6,7 @@ EasyRead is a "reverse Yomitan" for Japanese learners of English. Hover over a w
 
 ## Status
 
-Prototype. The backend (dictionary lookup with lemmatization, example sentences, and Anki card creation) works. The Chrome extension is under development.
+Prototype. The backend (dictionary lookup with lemmatization, phrase detection in a sentence, example sentences, and Anki card creation) works. The Chrome extension is under development.
 
 ## Project structure
 
@@ -78,6 +78,15 @@ Base URL: `http://127.0.0.1:8000`
 
 Looks up an English word or phrase.
 
+Query parameters:
+
+| Name | Required | Description |
+| --- | --- | --- |
+| `word` | yes | The hovered word (or a phrase). |
+| `sentence` | no | The whole subtitle line that contains the word. If sent, the backend looks for a phrase around the word (for example `give up`). |
+
+Always URL-encode both values (`encodeURIComponent` in JavaScript).
+
 200 OK:
 
 ```json
@@ -94,7 +103,7 @@ Looks up an English word or phrase.
 }
 ```
 
-- `word`: the dictionary entry that was found, not the raw input. The input is normalized first (lowercase, punctuation removed). If there is no exact match, the word is converted to its base form (lemma) and searched again. For example, `Give up!` returns `give up`, and `gave up` also returns `give up`. `running` returns `run`.
+- `word`: the dictionary entry that was found, not the raw input. Use it as the popup heading. The input is normalized first (lowercase, punctuation removed). If there is no exact match, the word is converted to its base form (lemma) and searched again. For example, `Give up!` returns `give up`, and `gave up` also returns `give up`. `running` returns `run`.
 - `senses`: a list of meaning groups, best first. Each has a part-of-speech `type` and a list of Japanese `meanings`.
 - `examples`: up to 3 example sentences with Japanese translations. It can be an empty list `[]` (for rare words or phrases), so the popup must handle that.
 
@@ -104,10 +113,18 @@ Looks up an English word or phrase.
 { "detail": "Word not found" }
 ```
 
+#### Phrase detection with `sentence`
+
+```
+GET /lookup?word=give&sentence=I%20won't%20give%20up
+```
+
+returns the entry `give up`. Hovering `up` in the same line returns `give up` too. The backend tries phrases that contain the hovered word, longest first, including separated forms ("give it up" becomes `give up`) and inflected forms ("gave up" becomes `give up`). If no phrase matches, it falls back to looking up the word alone. Without `sentence`, the behavior is the same as before.
+
 Limitations (for now):
 
+- Only phrases that exist in the dictionary can be found. If `get over` is missing, hovering `get` in that line returns `get`. Missing phrases are added to `seed.py`.
 - The lemmatizer works on single words or short phrases without context, so it can be wrong for ambiguous words (for example, `left`).
-- Finding phrases inside a whole sentence is not supported yet. Hovering `give` in "I won't give up" returns `give`, not `give up`. Send one word or phrase per request.
 - Example sentences only match the exact form of the word. `give up` finds "Don't give up." but not "He gave up."
 
 ### POST /anki/add

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from text_utils import normalize
 from anki import AnkiError, add_card
 from lemmatizer import lemmatize
+from phrases import candidate_phrases
 
 app = FastAPI(title="EasyRead API")
 
@@ -90,21 +91,46 @@ def find_examples(word: str):
     finally:
         conn.close()
 
+def find_in_sentence(word: str, sentence: str):
+    # 1) Exact phrases first / まず完全一致のフレーズ
+    candidates = candidate_phrases(sentence, word)
+    for phrase in candidates:
+        senses = find_senses(phrase)
+        if senses:
+            return phrase, senses
+    # 2) Then lemmatized phrases ("gave up" -> "give up")
+    # 次に基本形に直したフレーズ
+    for phrase in candidates:
+        lemma = normalize(lemmatize(phrase))
+        if lemma != phrase:
+            senses = find_senses(lemma)
+            if senses:
+                return lemma, senses
+    return None
 
 @app.get("/lookup", response_model=LookupResult)
-def lookup(word: str):
+def lookup(word: str, sentence: str = ""):
     clean = normalize(word)
+    senses = []
 
-    # 1) Exact match first (fast) / まず完全一致で検索する（速い）
-    senses = find_senses(clean)
+    # 0) If the subtitle line was sent, look for a phrase around the word
+    # 字幕の1行が送られてきた場合は、単語の周りのフレーズを探す
+    if sentence:
+        hit = find_in_sentence(word, sentence)
+        if hit:
+            clean, senses = hit
 
-    # 2) On a miss, retry with the lemma / 見つからなければ見出し語に直して再検索する
+    # 1) Exact match first / まず完全一致
+    if not senses:
+        senses = find_senses(clean)
+
+    # 2) Retry with the lemma / 見つからなければ見出し語に直して再検索
     if not senses:
         lemma = normalize(lemmatize(clean))
         if lemma != clean:
             senses = find_senses(lemma)
             if senses:
-                clean = lemma   # return the entry that was actually found
+                clean = lemma
 
     if not senses:
         raise HTTPException(status_code=404, detail="Word not found")
