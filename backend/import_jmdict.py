@@ -80,7 +80,12 @@ def clean_gloss(text):
     text = normalize(text)
     # Skip empty or too-long glosses
     # 空の語義や長すぎる語義は除外する
-    if not text or len(text.split()) > MAX_WORDS:
+    words = text.split()
+    if not text or len(words) > MAX_WORDS:
+        return None
+    # Skip "the dog" / "a cat": an article plus one word is not a real phrase
+    # "the dog" のような「冠詞＋1語」は句ではないので除外する
+    if len(words) == 2 and words[0] in {"the", "a", "an"}:
         return None
     return text
 

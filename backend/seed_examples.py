@@ -48,10 +48,59 @@ EXAMPLES = {
         ("The car pulled out of the garage.", "車がガレージから出ていった。"),
         ("They pulled out of the deal.", "彼らは取引から手を引いた。"),
     ],
+    "go": [
+        ("I go to school by bus.", "私はバスで学校に行く。"),
+        ("How is your new job going?", "新しい仕事はどう？"),
+        ("The milk went bad.", "牛乳が腐った。"),
+        ("It's your go.", "あなたの番だよ。"),
+    ],
+    "take": [
+        ("Take this umbrella with you.", "この傘を持っていって。"),
+        ("It takes two hours to get there.", "そこへ行くのに2時間かかる。"),
+        ("Take this medicine twice a day.", "この薬を1日2回飲んでください。"),
+        ("I take the train to work.", "電車で通勤している。"),
+    ],
+    "make": [
+        ("She makes breakfast every morning.", "彼女は毎朝朝食を作る。"),
+        ("The movie made me cry.", "その映画に泣かされた。"),
+        ("He makes a lot of money.", "彼はたくさん稼いでいる。"),
+        ("You'll make a good teacher.", "あなたはいい先生になるよ。"),
+    ],
+    "come": [
+        ("Come here, please.", "こっちに来て。"),
+        ("Spring has come.", "春が来た。"),
+        ("My dream came true.", "夢が叶った。"),
+    ],
+    "put": [
+        ("Put the book on the table.", "本をテーブルの上に置いて。"),
+        ("I put sugar in my coffee.", "コーヒーに砂糖を入れる。"),
+        ("Put your name here.", "ここに名前を書いてください。"),
+        ("Let me put it another way.", "別の言い方をさせて。"),
+    ],
     "break": [
         ("He broke the window.", "彼は窓を割った。"),
         ("Let's take a break.", "休憩しよう。"),
         ("She broke her promise.", "彼女は約束を破った。"),
+    ],
+    "gotta": [
+        ("I gotta go.", "もう行かなきゃ。"),
+        ("You gotta try this.", "これ絶対食べてみて。"),
+        ("We gotta hurry.", "急がなきゃ。"),
+    ],
+    "kinda": [
+        ("I'm kinda tired.", "ちょっと疲れた。"),
+        ("It's kinda funny.", "なんかおかしいね。"),
+        ("She's kinda shy.", "彼女はちょっと恥ずかしがり屋だ。"),
+    ],
+    "lemme": [
+        ("Lemme see.", "ちょっと見せて。"),
+        ("Lemme help you.", "手伝わせて。"),
+        ("Lemme think about it.", "ちょっと考えさせて。"),
+    ],
+    "ain't": [
+        ("It ain't over yet.", "まだ終わってないよ。"),
+        ("That ain't right.", "それは正しくない。"),
+        ("I ain't afraid.", "怖くなんかない。"),
     ],
     "give away": [
         ("They are giving away free samples.", "彼らは無料サンプルを配っている。"),
