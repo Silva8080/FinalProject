@@ -29,6 +29,9 @@ CANDIDATES = [
     "figure out", "hang out", "show up", "set up", "sit down", "stand up",
     # slang / contractions
     "gonna", "wanna", "gotta", "kinda", "lemme", "ain't", "what's up", "no way",
+    # core verbs
+    "get", "go", "take", "make", "come", "put", "give", "have", "do",
+    "see", "look", "turn", "run", "bring", "break",
 ]
 
 MIN_EXAMPLES = 3

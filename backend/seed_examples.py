@@ -92,6 +92,48 @@ EXAMPLES = {
         ("It's kinda funny.", "なんかおかしいね。"),
         ("She's kinda shy.", "彼女はちょっと恥ずかしがり屋だ。"),
     ],
+    "have": [
+        ("I have two brothers.", "私には兄弟が2人いる。"),
+        ("Let's have lunch.", "お昼を食べよう。"),
+        ("We had a great time.", "とても楽しい時間を過ごした。"),
+        ("I had my hair cut.", "髪を切ってもらった。"),
+    ],
+    "do": [
+        ("What do you do on weekends?", "週末は何をしてるの？"),
+        ("What do you do for a living?", "お仕事は何をされていますか？"),
+        ("This will do.", "これで十分だよ。"),
+    ],
+    "see": [
+        ("I can see the mountain from here.", "ここから山が見える。"),
+        ("I'm seeing my doctor tomorrow.", "明日、医者に会う。"),
+        ("I see what you mean.", "言いたいことはわかるよ。"),
+    ],
+    "look": [
+        ("Look at that bird.", "あの鳥を見て。"),
+        ("You look tired.", "疲れて見えるよ。"),
+        ("Let me have a look.", "ちょっと見せて。"),
+    ],
+    "turn": [
+        ("The wheel turns slowly.", "車輪はゆっくり回る。"),
+        ("Turn left at the corner.", "角を左に曲がって。"),
+        ("The leaves turned red.", "葉が赤くなった。"),
+        ("It's your turn.", "あなたの番だよ。"),
+    ],
+    "run": [
+        ("I run every morning.", "毎朝走っている。"),
+        ("She runs a small shop.", "彼女は小さな店を経営している。"),
+        ("The river runs through the town.", "川は町を流れている。"),
+        ("We went for a run.", "走りに行った。"),
+    ],
+    "run out of": [
+        ("We ran out of time.", "時間がなくなった。"),
+        ("I'm running out of money.", "お金がなくなってきた。"),
+        ("They ran out of food.", "彼らは食料を使い果たした。"),
+    ],
+    "bring": [
+        ("Please bring your passport.", "パスポートを持ってきてください。"),
+        ("The news brought tears to her eyes.", "そのニュースに彼女は涙ぐんだ。"),
+    ],
     "lemme": [
         ("Lemme see.", "ちょっと見せて。"),
         ("Lemme help you.", "手伝わせて。"),

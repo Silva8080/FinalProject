@@ -92,15 +92,13 @@ def find_examples(word: str):
         conn.close()
 
 def find_in_sentence(word: str, sentence: str):
-    # 1) Exact phrases first / まず完全一致のフレーズ
-    candidates = candidate_phrases(sentence, word)
-    for phrase in candidates:
+    # Candidates are sorted longest first. For each one, try the exact form,
+    # then its lemma, before moving on to the next candidate.
+    # 候補は長い順。各候補について、完全一致→基本形の順に試してから次へ進む
+    for phrase in candidate_phrases(sentence, word):
         senses = find_senses(phrase)
         if senses:
             return phrase, senses
-    # 2) Then lemmatized phrases ("gave up" -> "give up")
-    # 次に基本形に直したフレーズ
-    for phrase in candidates:
         lemma = normalize(lemmatize(phrase))
         if lemma != phrase:
             senses = find_senses(lemma)
