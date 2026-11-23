@@ -54,3 +54,7 @@ def test_examples_are_not_phrasal_for_base_verb():
     examples = lookup("give")[1]["examples"]
     for e in examples:
         assert "give up" not in e["english"].lower()
+
+def test_type_ja():
+    senses = lookup("dog")[1]["senses"]
+    assert senses[0]["type_ja"] == "名詞"

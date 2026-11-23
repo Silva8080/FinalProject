@@ -23,3 +23,20 @@ PARTICLES = {
 # Pronouns that can sit between verb and particle ("give it up")
 # 動詞と小さな語の間に入る代名詞
 PRONOUNS = {"it", "him", "her", "them", "me", "you", "us", "this", "that"}
+
+# Part-of-speech labels in Japanese / 品詞の日本語表記
+TYPE_JA = {
+    "noun": "名詞",
+    "verb": "動詞",
+    "phrasal verb": "句動詞",
+    "adjective": "形容詞",
+    "adverb": "副詞",
+    "expression": "表現",
+    "interjection": "感動詞",
+    "pronoun": "代名詞",
+    "particle": "助詞",
+    "conjunction": "接続詞",
+    "contraction": "短縮形",
+    "idiom": "イディオム",
+    "other": "その他",
+}

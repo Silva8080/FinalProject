@@ -28,14 +28,10 @@ def _call(action: str, **params):
     return data["result"]
 
 
-def add_card(word: str, meaning: str, sentence: str = "") -> int:
+def add_card(word: str, back: str) -> int:
     # Create the deck if needed (does nothing if it already exists)
     # デッキが無ければ作る（既にあれば何もしない）
     _call("createDeck", deck=DECK_NAME)
-
-    back = meaning
-    if sentence:
-        back += "<br><br>" + sentence
 
     return _call(
         "addNote",

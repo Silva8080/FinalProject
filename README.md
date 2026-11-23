@@ -15,7 +15,7 @@ Prototype. The backend (dictionary lookup with lemmatization, phrase detection i
 
 ## Run the backend
 
-Frontend teammates do not need to run the backend. You can build against the sample JSON in the "API" section below and run the backend later.
+Frontend teammates can either build the database themselves (below) or get a ready-made `dictionary.db` from the backend developer and put it in `backend/database/`. Until the backend runs, build against the sample JSON in the "API" section.
 
 ### 1. Download the data (not stored in Git)
 
@@ -54,7 +54,15 @@ uv run python check_coverage.py
 
 Lists common phrases that are missing from the dictionary, or that have fewer than 3 example sentences. Add them to `seed.py` and `seed_examples.py`, rebuild, and run it again. Add new phrases to the `CANDIDATES` list in the script.
 
-### 4. Start the server
+### 4. Run the tests (optional)
+
+```
+uv run pytest -v
+```
+
+Tests use the built database, so run the build scripts first.
+
+### 5. Start the server
 
 ```
 uv run uvicorn main:app --reload
@@ -93,7 +101,7 @@ Always URL-encode both values (`encodeURIComponent` in JavaScript).
 {
   "word": "racket",
   "senses": [
-    { "type": "noun", "meanings": ["ラケット"] }
+    { "type": "noun", "type_ja": "名詞", "meanings": ["ラケット"] }
   ],
   "examples": [
     { "english": "You have the same racket as I have.", "japanese": "君は僕と同じラケットを持っている。" },
@@ -104,7 +112,8 @@ Always URL-encode both values (`encodeURIComponent` in JavaScript).
 ```
 
 - `word`: the dictionary entry that was found, not the raw input. Use it as the popup heading. The input is normalized first (lowercase, punctuation removed). If there is no exact match, the word is converted to its base form (lemma) and searched again. For example, `Give up!` returns `give up`, and `gave up` also returns `give up`. `running` returns `run`.
-- `senses`: a list of meaning groups, best first. Each has a part-of-speech `type` and a list of Japanese `meanings`.
+- `senses`: a list of meaning groups, best first. Each has a part-of-speech `type`, its Japanese label `type_ja`, and a list of Japanese `meanings`.
+- `type_ja`: the part of speech in Japanese (for example `名詞`, `動詞`, `句動詞`). It is an empty string if the type has no Japanese label, so fall back to `type`.
 - `examples`: up to 3 example sentences with Japanese translations. It can be an empty list `[]` (for rare words or phrases), so the popup must handle that.
 
 404 Not Found (word not in the dictionary):
@@ -129,20 +138,22 @@ Limitations (for now):
 
 ### POST /anki/add
 
-Creates an Anki card through AnkiConnect.
+Creates an Anki card through AnkiConnect. The backend builds the card from its own dictionary data, so the card matches what the popup shows.
 
 Request body:
 
 ```json
 {
   "word": "give up",
-  "meaning": "諦める",
   "sentence": "I won't give up."
 }
 ```
 
-- `word` and `meaning` are required.
-- `sentence` is optional. If it is omitted or empty, the backend uses the first example sentence for the word (English and its Japanese translation), if one exists. If there is none, the card is created without a sentence.
+- `word` is required. Send the `word` field from the `/lookup` response (for example `give up`).
+- `sentence` is optional. It is the subtitle line where the word appeared, and it is added at the bottom of the card (unless it is already one of the examples).
+- `meaning` is optional and only used if the word is not in the dictionary. If the word is in the dictionary, it is ignored.
+
+Card format: deck `EasyRead`, note type `Basic`. Front is the word. Back has every sense with its part of speech (English and Japanese), up to 3 example sentences with Japanese translations, and the subtitle line (if sent). The deck is created automatically.
 
 200 OK:
 
@@ -154,12 +165,11 @@ Errors:
 
 | Status | Meaning | Body |
 | --- | --- | --- |
+| 404 | The word is not in the dictionary and no `meaning` was sent | `{ "detail": "Word not found" }` |
 | 409 | The card already exists | `{ "detail": "Card already exists" }` |
 | 503 | Cannot reach Anki | `{ "detail": "Cannot connect to Anki. Open Anki and install AnkiConnect." }` |
 | 400 | Any other Anki error | `{ "detail": "<message from Anki>" }` |
 | 422 | Invalid request body (for example, a missing `word`) | FastAPI validation error |
-
-Card format: deck `EasyRead`, note type `Basic`. Front is the word. Back is the meaning, with the sentence below it. The deck is created automatically.
 
 ### Requirements for Anki
 
@@ -177,9 +187,13 @@ Card format: deck `EasyRead`, note type `Basic`. Front is the word. Back is the 
 
 If the JSON shape changes, tell the team first. Changes can break the extension.
 
+## Sharing the database
+
+`dictionary.db` is not stored in Git (`*.db` is in `.gitignore`). To give it to a teammate, send the file (zip it if it is large) and have them put it in `backend/database/`. To update, stop the server, replace the file, and start it again. Name each copy with a date (for example `dictionary-2026-11-20.db`) so you know which version is in use. `git pull` never touches this file.
+
 ## Git notes
 
-- Never commit `backend/data/`, `*.db`, `.venv/`, or `__pycache__/`. They are in `.gitignore`. GitHub rejects files over 100 MB.
+- Never commit `backend/data/`, `*.db`, `.venv/`, `__pycache__/`, or `.pytest_cache/`. They are in `.gitignore`. GitHub rejects files over 100 MB.
 - Run `git pull` before you start work and before you push.
 
 ## Credits

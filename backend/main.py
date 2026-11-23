@@ -6,10 +6,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from text_utils import normalize
+from text_utils import TYPE_JA, normalize
 from anki import AnkiError, add_card
 from lemmatizer import lemmatize
 from phrases import candidate_phrases
+from html import escape
 
 app = FastAPI(title="EasyRead API")
 
@@ -30,6 +31,8 @@ app.add_middleware(
 class Sense(BaseModel):
     # Part of speech (noun, verb, phrasal verb, ...) / 品詞
     type: str
+    # Part of speech in Japanese (名詞, 動詞, ...) / 品詞の日本語
+    type_ja: str = ""
     # Japanese meanings of this sense / この意味のまとまりの日本語訳のリスト
     meanings: list[str]
 
@@ -71,7 +74,10 @@ def find_senses(word: str):
         ).fetchall()
         # meanings is stored as a JSON string, so decode it
         # meanings はJSON文字列で保存されているのでリストに戻す
-        return [{"type": t, "meanings": json.loads(m)} for t, m in rows]
+        return [
+            {"type": t, "type_ja": TYPE_JA.get(t, ""), "meanings": json.loads(m)}
+            for t, m in rows
+        ]
     finally:
         conn.close()
 
@@ -138,15 +144,41 @@ def lookup(word: str, sentence: str = ""):
         "examples": find_examples(clean),
     }
 
+def build_back(senses, examples, context=""):
+    # Card back: all senses, then examples, then the subtitle line
+    # カードの裏面: すべての意味、例文、字幕の1行の順に並べる
+    parts = []
+    for s in senses:
+        label = s["type"]
+        ja = TYPE_JA.get(label)
+        title = f"{label} / {ja}" if ja else label
+        parts.append(f"<b>{escape(title)}</b><br>{escape('、'.join(s['meanings']))}")
+    back = "<br><br>".join(parts)
+
+    if examples:
+        ex = "<br><br>".join(
+            f"{escape(e['english'])}<br>{escape(e['japanese'])}" for e in examples
+        )
+        back += "<hr>" + ex
+
+    # Skip the subtitle line if it is already one of the examples
+    # 字幕の1行が例文と同じなら、重複するので追加しない
+    example_texts = {normalize(e["english"]) for e in examples}
+    if context and normalize(context) not in example_texts:
+        back += f"<hr><i>{escape(context)}</i>"
+    return back
+
 # Request body sent by the extension
 # 拡張機能が送るリクエストの形
 class AnkiCard(BaseModel):
-    # The English word or phrase / 英単語またはフレーズ
+    # The "word" field from /lookup (for example "give up")
+    # /lookup が返した word（例: "give up"）
     word: str
-    # Japanese meaning to put on the back of the card / カードの裏面に入れる日本語の意味
-    meaning: str
-    # Example sentence; optional. If empty, the first example from the DB is used
-    # 例文（省略可）。空の場合はDBの最初の例文を使う
+    # Optional: only used if the word is not in the dictionary
+    # 省略可。辞書にない単語のときだけ使う
+    meaning: str = ""
+    # Optional: the subtitle line where the word appeared
+    # 省略可。単語が出てきた字幕の1行
     sentence: str = ""
 
 
@@ -158,16 +190,23 @@ class AnkiResult(BaseModel):
 
 @app.post("/anki/add", response_model=AnkiResult)
 def anki_add(card: AnkiCard):
-    # If no sentence was sent, use the first example from the database
-    # 例文が送られてこなかった場合は、DBの最初の例文を使う
-    sentence = card.sentence
-    if not sentence:
-        examples = find_examples(normalize(card.word))
-        if examples:
-            sentence = f"{examples[0]['english']}<br>{examples[0]['japanese']}"
+    clean = normalize(card.word)
+    senses = find_senses(clean)
+    examples = find_examples(clean) if senses else []
+
+    if senses:
+        back = build_back(senses, examples, card.sentence)
+    elif card.meaning:
+        # Not in the dictionary: use what the extension sent
+        # 辞書にない場合は、拡張機能から送られた内容を使う
+        back = escape(card.meaning)
+        if card.sentence:
+            back += f"<hr><i>{escape(card.sentence)}</i>"
+    else:
+        raise HTTPException(status_code=404, detail="Word not found")
 
     try:
-        note_id = add_card(card.word, card.meaning, sentence)
+        note_id = add_card(card.word, back)
     except AnkiError as e:
         message = str(e)
         # Anki not open -> 503, duplicate card -> 409, anything else -> 400
