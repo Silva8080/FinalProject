@@ -7,7 +7,7 @@ chrome.runtime.onMessage.addListener(
         `http://127.0.0.1:8000/lookup?word=${encodeURIComponent(
           message.word
         )}&sentence=${encodeURIComponent(
-          message.sentence
+          message.sentence || ""
         )}`
       )
         .then((response) => {
@@ -18,8 +18,12 @@ chrome.runtime.onMessage.addListener(
 
           return response.json();
         })
-        .then((data) => sendResponse(data))
-        .catch(() => sendResponse(null));
+        .then((data) => {
+          sendResponse(data);
+        })
+        .catch(() => {
+          sendResponse(null);
+        });
 
       return true;
     }
@@ -32,15 +36,24 @@ chrome.runtime.onMessage.addListener(
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type":
+              "application/json"
           },
 
-          body: JSON.stringify(message.data)
+          body: JSON.stringify(
+            message.data
+          )
         }
       )
-        .then((response) => response.json())
-        .then((data) => sendResponse(data))
-        .catch(() => sendResponse(null));
+        .then((response) =>
+          response.json()
+        )
+        .then((data) =>
+          sendResponse(data)
+        )
+        .catch(() =>
+          sendResponse(null)
+        );
 
       return true;
     }

@@ -1,6 +1,7 @@
 console.log("EasyRead V3 loaded");
 
 let currentPopup = null;
+let currentSentence = "";
 
 // =====================
 // API
@@ -32,7 +33,7 @@ function saveToAnki(data) {
             data.senses?.[0]?.meanings?.[0] || "",
 
           sentence:
-            data.examples?.[0]?.english || ""
+            currentSentence || ""
         }
       },
 
@@ -172,6 +173,11 @@ async function showPopup(
             "
           >
             ${sense.type}
+            ${
+                sense.type_ja
+                ? ` / ${sense.type_ja}`
+                : ""
+            }
           </div>
 
           <ul>
@@ -333,10 +339,24 @@ async function showPopup(
     "999999";
 
   document.body.appendChild(
-    popup
+  popup
   );
 
   currentPopup = popup;
+
+  popup.addEventListener(
+    "mousedown",
+    (event) => {
+      event.stopPropagation();
+    }
+  );
+
+  popup.addEventListener(
+    "click",
+    (event) => {
+      event.stopPropagation();
+    }
+  );
 
   // 発音
 
@@ -346,10 +366,14 @@ async function showPopup(
     )
     .addEventListener(
       "click",
-      () => {
+      (event) => {
+
+        event.stopPropagation();
+
         speak(data.word);
-      }
-    );
+    }
+  );
+
 
   // Anki保存
 
@@ -359,7 +383,9 @@ async function showPopup(
     )
     .addEventListener(
       "click",
-      async () => {
+    async (event) => {
+
+        event.stopPropagation();
 
         const result =
           await saveToAnki(data);
@@ -381,30 +407,32 @@ async function showPopup(
     )
     .forEach((item) => {
 
-      item.addEventListener(
-        "click",
-        async () => {
+        item.addEventListener(
+            "click",
+            async (event) => {
 
-          const word =
-            item.dataset.word;
+                event.stopPropagation();
 
-          const result =
-            await lookupWord(
-              word,
-              word
-            );
+                const word =
+                item.dataset.word;
 
-          if (!result) {
-            return;
-          }
+                const result =
+                await lookupWord(
+                    word,
+                    word
+                );
 
-          showPopup(
-            result,
-            x,
-            y
-          );
-        }
-      );
+                if (!result) {
+                    return;
+                }
+
+                showPopup(
+                    result,
+                    x,
+                    y
+                );
+            }
+        );
     });
 }
 
@@ -449,6 +477,7 @@ async function executeLookup(
   x,
   y
 ) {
+
   if (
     !text ||
     text.length > 100
@@ -458,6 +487,9 @@ async function executeLookup(
 
   const sentence =
     getSentence();
+
+  currentSentence =
+    sentence;
 
   const data =
     await lookupWord(
@@ -533,7 +565,7 @@ document.addEventListener(
 );
 
 // =====================
-// Close Popup
+// ESC
 // =====================
 
 document.addEventListener(
@@ -548,6 +580,10 @@ document.addEventListener(
   }
 );
 
+// =====================
+// Outside Click
+// =====================
+
 document.addEventListener(
   "click",
   (event) => {
@@ -557,13 +593,18 @@ document.addEventListener(
         "easyread-popup"
       );
 
+    if (!popup) {
+      return;
+    }
+
     if (
-      popup &&
-      !popup.contains(
+      popup.contains(
         event.target
       )
     ) {
-      removePopup();
+      return;
     }
+
+    removePopup();
   }
 );
