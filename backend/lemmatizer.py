@@ -9,3 +9,7 @@ def lemmatize(text: str) -> str:
     # "gave up" -> "give up", "dogs" -> "dog"
     # 活用形を見出し語の形に戻す
     return " ".join(token.lemma_.lower() for token in _nlp(text))
+def verb_tokens(sentence: str) -> set[str]:
+    # Lowercase words that are used as verbs in this sentence
+    # この文の中で動詞として使われている単語（小文字）
+    return {t.text.lower() for t in _nlp(sentence) if t.pos_ in ("VERB", "AUX")}

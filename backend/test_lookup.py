@@ -58,3 +58,11 @@ def test_examples_are_not_phrasal_for_base_verb():
 def test_type_ja():
     senses = lookup("dog")[1]["senses"]
     assert senses[0]["type_ja"] == "名詞"
+
+def test_noun_is_not_phrasal_verb():
+    sentence = "A strike on a private home killed one person"
+    assert lookup("strike", sentence)[1]["word"] == "strike"
+
+
+def test_verb_still_matches_phrasal_verb():
+    assert lookup("strike", "They strike on a new idea")[1]["word"] == "strike on"

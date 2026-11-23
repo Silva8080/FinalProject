@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from text_utils import TYPE_JA, normalize
 from anki import AnkiError, add_card
-from lemmatizer import lemmatize
+from lemmatizer import lemmatize, verb_tokens
 from phrases import candidate_phrases
 from html import escape
 
@@ -98,18 +98,29 @@ def find_examples(word: str):
         conn.close()
 
 def find_in_sentence(word: str, sentence: str):
-    # Candidates are sorted longest first. For each one, try the exact form,
-    # then its lemma, before moving on to the next candidate.
-    # 候補は長い順。各候補について、完全一致→基本形の順に試してから次へ進む
+    # Words used as verbs in this sentence (to reject "strike on" in "A strike on ...")
+    # この文で動詞として使われている単語（名詞の "strike on" などを除外するため）
+    verbs = verb_tokens(sentence)
+
     for phrase in candidate_phrases(sentence, word):
-        senses = find_senses(phrase)
-        if senses:
-            return phrase, senses
+        first = phrase.split()[0]
+
+        # Try the exact form, then its lemma
+        # 完全一致、次に基本形の順に試す
+        options = [phrase]
         lemma = normalize(lemmatize(phrase))
         if lemma != phrase:
-            senses = find_senses(lemma)
-            if senses:
-                return lemma, senses
+            options.append(lemma)
+
+        for option in options:
+            senses = find_senses(option)
+            if not senses:
+                continue
+            # A phrasal verb must start with a word used as a verb
+            # 句動詞は、動詞として使われている単語で始まる必要がある
+            if all(s["type"] == "phrasal verb" for s in senses) and first not in verbs:
+                continue
+            return option, senses
     return None
 
 @app.get("/lookup", response_model=LookupResult)
