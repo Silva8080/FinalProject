@@ -1,153 +1,569 @@
-console.log("EasyRead loaded");
+console.log("EasyRead V3 loaded");
 
-// =========================
-// テスト用単語エリア
-// =========================
+let currentPopup = null;
 
-const testDiv = document.createElement("div");
+// =====================
+// API
+// =====================
 
-testDiv.innerHTML = `
-  <span class="easyread-word">apple</span>
-  <span class="easyread-word">banana</span>
-  <span class="easyread-word">orange</span>
-`;
+function lookupWord(word, sentence) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      {
+        type: "lookup",
+        word,
+        sentence
+      },
+      resolve
+    );
+  });
+}
 
-testDiv.style.position = "fixed";
-testDiv.style.top = "100px";
-testDiv.style.right = "20px";
-testDiv.style.backgroundColor = "white";
-testDiv.style.color = "black";
-testDiv.style.padding = "10px";
-testDiv.style.border = "1px solid black";
-testDiv.style.borderRadius = "8px";
-testDiv.style.zIndex = "99999";
+function saveToAnki(data) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      {
+        type: "anki",
 
-document.body.appendChild(testDiv);
+        data: {
+          word: data.word,
 
-// =========================
-// ポップアップ表示
-// =========================
+          meaning:
+            data.senses?.[0]?.meanings?.[0] || "",
 
-function showPopup(data) {
-  const oldPopup = document.getElementById("easyread-popup");
+          sentence:
+            data.examples?.[0]?.english || ""
+        }
+      },
 
-  if (oldPopup) {
-    oldPopup.remove();
+      resolve
+    );
+  });
+}
+
+// =====================
+// History
+// =====================
+
+async function saveHistory(word) {
+  const result =
+    await chrome.storage.local.get(
+      "history"
+    );
+
+  const history =
+    result.history || [];
+
+  history.unshift(word);
+
+  const unique =
+    [...new Set(history)]
+      .slice(0, 30);
+
+  await chrome.storage.local.set({
+    history: unique
+  });
+}
+
+async function getHistory() {
+  const result =
+    await chrome.storage.local.get(
+      "history"
+    );
+
+  return result.history || [];
+}
+
+// =====================
+// Speech
+// =====================
+
+function speak(word) {
+  speechSynthesis.cancel();
+
+  const utterance =
+    new SpeechSynthesisUtterance(
+      word
+    );
+
+  utterance.lang = "en-US";
+  utterance.rate = 1;
+
+  speechSynthesis.speak(
+    utterance
+  );
+}
+
+// =====================
+// Popup
+// =====================
+
+function removePopup() {
+  const popup =
+    document.getElementById(
+      "easyread-popup"
+    );
+
+  if (popup) {
+    popup.remove();
   }
 
-  const popup = document.createElement("div");
+  currentPopup = null;
+}
 
-  popup.id = "easyread-popup";
+async function showPopup(
+  data,
+  x,
+  y
+) {
+  removePopup();
 
-  let html = `<h3>${data.word}</h3>`;
+  const history =
+    await getHistory();
 
-  data.senses.forEach((sense) => {
-    html += `<p><strong>${sense.type}</strong></p>`;
-    html += "<ul>";
+  const popup =
+    document.createElement("div");
 
-    sense.meanings.forEach((meaning) => {
-      html += `<li>${meaning}</li>`;
-    });
+  popup.id =
+    "easyread-popup";
 
-    html += "</ul>";
-  });
+  let html = `
+    <div
+      style="
+        display:flex;
+        justify-content:
+        space-between;
+        align-items:center;
+      "
+    >
+      <div
+        style="
+          font-size:22px;
+          font-weight:bold;
+        "
+      >
+        ${data.word}
+      </div>
 
-  if (data.examples.length > 0) {
-    html += "<hr>";
-    html += "<h4>例文</h4>";
+      <button
+        id="easyread-speak-btn"
+      >
+        🔊
+      </button>
 
-    data.examples.forEach((example) => {
+    </div>
+
+    <hr>
+  `;
+
+  data.senses.forEach(
+    (sense) => {
       html += `
-        <p>${example.english}</p>
-        <p>${example.japanese}</p>
+        <div
+          style="
+            margin-bottom:12px;
+          "
+        >
+          <div
+            style="
+              font-weight:bold;
+              color:#444;
+              margin-bottom:4px;
+            "
+          >
+            ${sense.type}
+          </div>
+
+          <ul>
+      `;
+
+      sense.meanings.forEach(
+        (meaning) => {
+          html += `
+            <li>
+              ${meaning}
+            </li>
+          `;
+        }
+      );
+
+      html += `
+          </ul>
+        </div>
+      `;
+    }
+  );
+
+  if (
+    data.examples &&
+    data.examples.length > 0
+  ) {
+    html += `
+      <hr>
+
+      <div
+        style="
+          font-weight:bold;
+          margin-bottom:8px;
+        "
+      >
+        例文
+      </div>
+    `;
+
+    data.examples.forEach(
+      (example) => {
+        html += `
+          <div
+            style="
+              margin-bottom:12px;
+            "
+          >
+            <div>
+              ${example.english}
+            </div>
+
+            <div
+              style="
+                color:#666;
+                margin-top:3px;
+              "
+            >
+              ${example.japanese}
+            </div>
+          </div>
+        `;
+      }
+    );
+  }
+
+  html += `
+    <button
+      id="easyread-anki-btn"
+      style="
+        width:100%;
+        margin-top:8px;
+      "
+    >
+      Ankiに保存
+    </button>
+  `;
+
+  if (history.length > 0) {
+
+    html += `
+      <hr>
+
+      <div
+        style="
+          font-weight:bold;
+          margin-bottom:6px;
+        "
+      >
+        最近調べた単語
+      </div>
+
+      <div
+        id="easyread-history"
+      >
+    `;
+
+    history.forEach((word) => {
+
+      html += `
+        <div
+          class="easyread-history-item"
+          data-word="${word}"
+
+          style="
+            cursor:pointer;
+            margin-bottom:4px;
+            color:#0066cc;
+          "
+        >
+          ${word}
+        </div>
       `;
     });
+
+    html += `
+      </div>
+    `;
   }
 
   popup.innerHTML = html;
 
-  popup.style.position = "fixed";
-  popup.style.top = "170px";
-  popup.style.right = "20px";
-  popup.style.width = "300px";
-  popup.style.backgroundColor = "white";
-  popup.style.color = "black";
-  popup.style.padding = "12px";
-  popup.style.border = "1px solid #ccc";
-  popup.style.borderRadius = "8px";
-  popup.style.boxShadow = "0 2px 10px rgba(0,0,0,0.3)";
-  popup.style.zIndex = "99999";
+  popup.style.position =
+    "fixed";
 
-  document.body.appendChild(popup);
+  popup.style.left =
+    `${x}px`;
+
+  popup.style.top =
+    `${y}px`;
+
+  popup.style.width =
+    "380px";
+
+  popup.style.maxHeight =
+    "500px";
+
+  popup.style.overflowY =
+    "auto";
+
+  popup.style.background =
+    "white";
+
+  popup.style.color =
+    "black";
+
+  popup.style.padding =
+    "15px";
+
+  popup.style.borderRadius =
+    "10px";
+
+  popup.style.border =
+    "1px solid #ccc";
+
+  popup.style.boxShadow =
+    "0 4px 15px rgba(0,0,0,0.25)";
+
+  popup.style.zIndex =
+    "999999";
+
+  document.body.appendChild(
+    popup
+  );
+
+  currentPopup = popup;
+
+  // 発音
+
+  document
+    .getElementById(
+      "easyread-speak-btn"
+    )
+    .addEventListener(
+      "click",
+      () => {
+        speak(data.word);
+      }
+    );
+
+  // Anki保存
+
+  document
+    .getElementById(
+      "easyread-anki-btn"
+    )
+    .addEventListener(
+      "click",
+      async () => {
+
+        const result =
+          await saveToAnki(data);
+
+        if (result) {
+          document.getElementById(
+            "easyread-anki-btn"
+          ).textContent =
+            "保存しました";
+        }
+      }
+    );
+
+  // 履歴クリック
+
+  document
+    .querySelectorAll(
+      ".easyread-history-item"
+    )
+    .forEach((item) => {
+
+      item.addEventListener(
+        "click",
+        async () => {
+
+          const word =
+            item.dataset.word;
+
+          const result =
+            await lookupWord(
+              word,
+              word
+            );
+
+          if (!result) {
+            return;
+          }
+
+          showPopup(
+            result,
+            x,
+            y
+          );
+        }
+      );
+    });
 }
 
-// =========================
-// 字幕監視
-// =========================
+// =====================
+// Sentence
+// =====================
 
-let lastCaption = "";
+function getSentence() {
 
-setInterval(() => {
-  const captions = document.querySelectorAll(".ytp-caption-segment");
+  const selection =
+    window.getSelection();
 
-  const text = Array.from(captions)
-    .map((caption) => caption.textContent)
-    .join(" ");
+  if (
+    !selection ||
+    !selection.rangeCount
+  ) {
+    return "";
+  }
 
-  if (!text || text === lastCaption) {
+  const node =
+    selection
+      .getRangeAt(0)
+      .commonAncestorContainer;
+
+  const element =
+    node.nodeType === 1
+      ? node
+      : node.parentElement;
+
+  return (
+    element?.innerText ||
+    ""
+  );
+}
+
+// =====================
+// Search
+// =====================
+
+async function executeLookup(
+  text,
+  x,
+  y
+) {
+  if (
+    !text ||
+    text.length > 100
+  ) {
     return;
   }
 
-  lastCaption = text;
+  const sentence =
+    getSentence();
 
-  console.log("字幕:", text);
+  const data =
+    await lookupWord(
+      text,
+      sentence
+    );
 
-  const words = text.split(/\s+/);
-
-  console.log("単語一覧:", words);
-
-  const spans = words.map((word) => {
-    return `<span class="easyread-word">${word}</span>`;
-  });
-
-  console.log(spans.join(" "));
-}, 500);
-
-// =========================
-// ホバー検知
-// =========================
-
-document.addEventListener("mouseover", async (event) => {
-  if (!event.target.classList.contains("easyread-word")) {
+  if (!data) {
     return;
   }
 
-  const word = event.target.textContent;
+  await saveHistory(
+    data.word
+  );
 
-  console.log("ホバー:", word);
+  showPopup(
+    data,
+    x,
+    y
+  );
+}
 
-  // モックデータ
-  const data = {
-    word: word,
-    senses: [
-      {
-        type: "noun",
-        meanings: ["テスト意味1"]
-      },
-      {
-        type: "noun",
-        meanings: ["テスト意味2"]
-      }
-    ],
-    examples: [
-      {
-        english: `Example sentence with ${word}.`,
-        japanese: `${word} を使った例文です。`
-      }
-    ]
-  };
+// =====================
+// Selection Search
+// =====================
 
-  console.log("辞書データ:", data);
+document.addEventListener(
+  "mouseup",
+  async (event) => {
 
-  showPopup(data);
-});
+    const text =
+      window
+        .getSelection()
+        .toString()
+        .trim();
+
+    if (!text) {
+      return;
+    }
+
+    executeLookup(
+      text,
+      event.clientX + 10,
+      event.clientY + 10
+    );
+  }
+);
+
+// =====================
+// Double Click Search
+// =====================
+
+document.addEventListener(
+  "dblclick",
+  async (event) => {
+
+    const text =
+      window
+        .getSelection()
+        .toString()
+        .trim();
+
+    if (!text) {
+      return;
+    }
+
+    executeLookup(
+      text,
+      event.clientX + 10,
+      event.clientY + 10
+    );
+  }
+);
+
+// =====================
+// Close Popup
+// =====================
+
+document.addEventListener(
+  "keydown",
+  (event) => {
+
+    if (
+      event.key === "Escape"
+    ) {
+      removePopup();
+    }
+  }
+);
+
+document.addEventListener(
+  "click",
+  (event) => {
+
+    const popup =
+      document.getElementById(
+        "easyread-popup"
+      );
+
+    if (
+      popup &&
+      !popup.contains(
+        event.target
+      )
+    ) {
+      removePopup();
+    }
+  }
+);
