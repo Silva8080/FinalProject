@@ -63,6 +63,13 @@ def test_noun_is_not_phrasal_verb():
     sentence = "A strike on a private home killed one person"
     assert lookup("strike", sentence)[1]["word"] == "strike"
 
+def test_auto_phrase_does_not_hijack():
+    assert lookup("dog", "The dog is big")[1]["word"] == "dog"
+    assert lookup("out", "Get out of here")[1]["word"] != "every single"
+
+
+def test_curated_phrase_matches():
+    assert lookup("single", "every single person")[1]["word"] == "every single"
 
 def test_verb_still_matches_phrasal_verb():
     assert lookup("strike", "They strike on a new idea")[1]["word"] == "strike on"

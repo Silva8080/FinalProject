@@ -11,6 +11,7 @@ from anki import AnkiError, add_card
 from lemmatizer import lemmatize, verb_tokens
 from phrases import candidate_phrases
 from html import escape
+from seed import ENTRIES as CURATED
 
 app = FastAPI(title="EasyRead API")
 
@@ -115,6 +116,13 @@ def find_in_sentence(word: str, sentence: str):
         for option in options:
             senses = find_senses(option)
             if not senses:
+                continue
+            # Automatic multi-word entries are too noisy: only accept
+            # phrasal verbs and hand-written (seeded) phrases
+            # 自動生成の複数語エントリはノイズが多いので、句動詞か手書きのものだけ使う
+            is_phrase = " " in option
+            is_phrasal = all(s["type"] == "phrasal verb" for s in senses)
+            if is_phrase and option not in CURATED and not is_phrasal:
                 continue
             # A phrasal verb must start with a word used as a verb
             # 句動詞は、動詞として使われている単語で始まる必要がある

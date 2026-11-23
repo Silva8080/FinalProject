@@ -125,6 +125,16 @@ EXAMPLES = {
         ("The river runs through the town.", "川は町を流れている。"),
         ("We went for a run.", "走りに行った。"),
     ],
+    "every single": [
+        ("Every single person agreed.", "全員が一人残らず賛成した。"),
+        ("I read every single page.", "1ページも残さず読んだ。"),
+        ("She calls me every single day.", "彼女は毎日欠かさず電話してくる。"),
+    ],
+    "single": [
+        ("I don't have a single dollar.", "1ドルも持っていない。"),
+        ("Are you single?", "独身ですか？"),
+        ("He bought a single ticket.", "彼は片道切符を1枚買った。"),
+    ],
     "run out of": [
         ("We ran out of time.", "時間がなくなった。"),
         ("I'm running out of money.", "お金がなくなってきた。"),
