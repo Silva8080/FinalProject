@@ -99,4 +99,13 @@ def test_nationality_without_language_batch():
         meanings = [m for s in lookup(word)[1]["senses"] for m in s["meanings"]]
         assert expected in meanings
 
+def test_plural_uses_singular():
+    assert lookup("taxes")[1]["word"] == "tax"
+    assert lookup("babies")[1]["word"] == "baby"
+    assert lookup("dogs")[1]["word"] == "dog"
+
+
+def test_not_plural():
+    assert lookup("news")[1]["word"] == "news"
+
 

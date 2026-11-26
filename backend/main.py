@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from text_utils import TYPE_JA, normalize
 from anki import AnkiError, add_card
-from lemmatizer import lemmatize, noun_tokens, rule_lemma, verb_tokens
+from lemmatizer import lemmatize, noun_tokens, plural_lemma, rule_lemma, verb_tokens
 from phrases import candidate_phrases
 from html import escape
 from seed import ENTRIES as CURATED
@@ -147,6 +147,9 @@ def prefer_lemma(clean: str):
     # 1語の場合: まずつづり規則で基本形を探す
     if " " not in clean:
         base = rule_lemma(clean, has_verb, has_entry)
+        if base:
+            return base, find_senses(base)
+        base = plural_lemma(clean, has_entry)
         if base:
             return base, find_senses(base)
 

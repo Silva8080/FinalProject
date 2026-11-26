@@ -51,3 +51,28 @@ def rule_lemma(word: str, is_verb, is_word=None) -> str | None:
             if check(c):
                 return c
     return None
+
+# Words that look plural but are not / 複数形に見えるが複数形ではない語
+NOT_PLURAL = {"news", "series", "species", "means", "physics", "politics",
+              "mathematics", "lens", "gas", "bus", "yes", "this", "his"}
+
+
+def plural_lemma(word: str, is_word) -> str | None:
+    # Spelling-rule lemma for plurals: taxes -> tax, babies -> baby, cats -> cat
+    # 複数形のつづり規則による基本形
+    if word in NOT_PLURAL or len(word) <= 3 or not word.endswith("s"):
+        return None
+    if word.endswith(("ss", "us", "is")):
+        return None
+
+    candidates = []
+    if word.endswith("ies"):
+        candidates.append(word[:-3] + "y")      # babies -> baby
+    if word.endswith("es"):
+        candidates.append(word[:-2])            # taxes -> tax, boxes -> box
+    candidates.append(word[:-1])                # cats -> cat, houses -> house
+
+    for c in candidates:
+        if is_word(c):
+            return c
+    return None
