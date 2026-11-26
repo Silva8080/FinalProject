@@ -149,6 +149,33 @@ ENTRIES = {
         ("verb", ["走る", "運営する", "流れる"]),
         ("noun", ["ラン", "走ること", "連続"]),
     ],
+    "african american": [
+        ("noun", ["アフリカ系アメリカ人"]),
+        ("adjective", ["アフリカ系アメリカ人の"]),
+    ],
+    "asian american": [
+        ("noun", ["アジア系アメリカ人"]),
+        ("adjective", ["アジア系アメリカ人の"]),
+    ],
+    "native american": [
+        ("noun", ["アメリカ先住民", "ネイティブアメリカン"]),
+        ("adjective", ["アメリカ先住民の"]),
+    ],
+    "south american": [
+        ("noun", ["南米人", "南アメリカ人"]),
+        ("adjective", ["南米の", "南アメリカの"]),
+    ],
+    "north american": [
+        ("noun", ["北米人", "北アメリカ人"]),
+        ("adjective", ["北米の", "北アメリカの"]),
+    ],
+    "south korea": [("noun", ["韓国", "大韓民国"])],
+    "north korea": [("noun", ["北朝鮮", "朝鮮民主主義人民共和国"])],
+    "korea": [("noun", ["韓国", "朝鮮半島"])],
+    "united states": [("noun", ["アメリカ合衆国", "アメリカ", "米国"])],
+    "united kingdom": [("noun", ["イギリス", "英国", "連合王国"])],
+    "european union": [("noun", ["欧州連合", "EU"])],
+    "united nations": [("noun", ["国際連合", "国連"])],
 }
 
 # (English word, country in Japanese, language in Japanese or None)
@@ -269,6 +296,17 @@ NATIONALITIES = [
     ("new zealander", "ニュージーランド", None),
     # Others
     ("peruvian", "ペルー", None),
+    # Regions / 地域
+    ("south american", "南米", None),
+    ("north american", "北米", None),
+    ("central american", "中米", None),
+    ("latin american", "ラテンアメリカ", None),
+    ("european", "ヨーロッパ", None),
+    ("asian", "アジア", None),
+    ("african", "アフリカ", None),
+    ("southeast asian", "東南アジア", None),
+    ("east asian", "東アジア", None),
+    ("middle eastern", "中東", None),
 ]
 
 for eng, country, language in NATIONALITIES:

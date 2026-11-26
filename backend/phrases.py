@@ -1,4 +1,4 @@
-from text_utils import PARTICLES, PRONOUNS, normalize
+from text_utils import PARTICLES, PRONOUNS, normalize, strip_possessive
 
 MAX_LEN = 4  # longest phrase to try (words) / 試す最長のフレーズ（語数）
 
@@ -8,8 +8,8 @@ def candidate_phrases(sentence: str, word: str) -> list[str]:
     Phrases from the sentence that contain the hovered word, longest first.
     文の中からホバーした単語を含むフレーズを、長い順に返す。
     """
-    tokens = normalize(sentence).split()
-    target = normalize(word)
+    tokens = [strip_possessive(t) for t in normalize(sentence).split()]
+    target = strip_possessive(normalize(word))
     found = []  # (words used in the sentence, phrase)
 
     for p, tok in enumerate(tokens):

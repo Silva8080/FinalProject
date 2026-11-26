@@ -108,4 +108,23 @@ def test_plural_uses_singular():
 def test_not_plural():
     assert lookup("news")[1]["word"] == "news"
 
+def test_regional_nationalities():
+    assert lookup("american", "a South American nation")[1]["word"] == "south american"
+    assert lookup("south", "a South American nation")[1]["word"] == "south american"
+    assert lookup("american", "a North American country")[1]["word"] == "north american"
+    assert lookup("american")[1]["word"] == "american"
+
+def test_us_acronym():
+    assert lookup("US")[1]["word"] == "united states"
+    assert lookup("U.S.")[1]["word"] == "united states"
+    assert lookup("us")[1]["word"] != "united states"
+
+def test_possessive_phrase():
+    s = "South Korea's trade minister said"
+    assert lookup("South", s)[1]["word"] == "south korea"
+    assert lookup("Korea's", s)[1]["word"] == "south korea"
+
+
+def test_contraction_not_stripped():
+    assert lookup("what's up")[1]["word"] == "what's up"
 

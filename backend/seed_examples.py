@@ -125,6 +125,11 @@ EXAMPLES = {
         ("The river runs through the town.", "川は町を流れている。"),
         ("We went for a run.", "走りに行った。"),
     ],
+    "united states": [
+        ("He was born in the United States.", "彼はアメリカで生まれた。"),
+        ("The US imposed new tariffs.", "アメリカは新たな関税を課した。"),
+        ("She moved to the United States last year.", "彼女は去年アメリカに引っ越した。"),
+    ],
     "grocery store": [
         ("I went to the grocery store.", "食料品店に行った。"),
         ("The grocery store is closed on Sunday.", "その食料品店は日曜日は閉まっている。"),

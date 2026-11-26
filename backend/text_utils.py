@@ -13,6 +13,20 @@ def normalize(text: str) -> str:
     # 前後の空白を削除し、連続する空白を1つにする
     return " ".join(text.split())
 
+# Words where 's is a contraction (it's = it is), not a possessive
+# 's が所有格ではなく短縮形（it's = it is）になる語
+CONTRACTION_S = {"it", "he", "she", "that", "what", "there", "here",
+                 "let", "who", "where", "how", "when", "why"}
+
+
+def strip_possessive(token: str) -> str:
+    # korea's -> korea, countries' -> countries, but it's stays it's
+    # 所有格の 's を取り除く（it's などの短縮形は残す）
+    if token.endswith("'s") and token[:-2] not in CONTRACTION_S:
+        return token[:-2]
+    if token.endswith("s'"):
+        return token[:-1]
+    return token
 
 # Small words that turn a verb into a phrasal verb ("give" + "up")
 # 動詞を句動詞に変える小さな語

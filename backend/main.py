@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from text_utils import TYPE_JA, normalize
+from text_utils import TYPE_JA, normalize, strip_possessive
 from anki import AnkiError, add_card
 from lemmatizer import lemmatize, noun_tokens, plural_lemma, rule_lemma, verb_tokens
 from phrases import candidate_phrases
@@ -159,9 +159,26 @@ def prefer_lemma(clean: str):
         if senses:
             return lemma, senses
     return None
+
+# All-caps acronyms (checked BEFORE lowercasing) / 大文字の略語（小文字化の前に判定する）
+ACRONYMS = {
+    "US": "united states", "U.S.": "united states",
+    "USA": "united states", "U.S.A.": "united states",
+    "UK": "united kingdom", "U.K.": "united kingdom",
+    "EU": "european union",
+    "UN": "united nations",
+}
 @app.get("/lookup", response_model=LookupResult)
 def lookup(word: str, sentence: str = ""):
-    clean = normalize(word)
+    # "US" (capitals) means the country; "us" (lowercase) is the pronoun
+    # 大文字の "US" は国、小文字の "us" は代名詞
+    raw = word.strip().strip(",;:!?\"'()“”")
+    key = ACRONYMS.get(raw)
+    if key:
+        senses = find_senses(key)
+        if senses:
+            return {"word": key, "senses": senses, "examples": find_examples(key)}
+    clean = strip_possessive(normalize(word))
     senses = []
 
     # 0) If the subtitle line was sent, look for a phrase around the word
