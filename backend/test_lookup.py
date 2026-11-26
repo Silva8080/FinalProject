@@ -82,3 +82,21 @@ def test_spelling_rule_lemmas():
     assert lookup("singing")[1]["word"] == "sing"
     assert lookup("running")[1]["word"] == "run"
     assert lookup("starred")[1]["word"] == "star"
+
+def test_nationality_has_person_and_language():
+    meanings = [m for s in lookup("russian")[1]["senses"] for m in s["meanings"]]
+    assert "ロシア人" in meanings
+    assert "ロシア語" in meanings
+
+
+def test_nationality_without_language():
+    meanings = [m for s in lookup("american")[1]["senses"] for m in s["meanings"]]
+    assert "アメリカ人" in meanings
+    assert all("語" not in m for m in meanings)
+
+def test_nationality_without_language_batch():
+    for word, expected in [("chilean", "チリ人"), ("syrian", "シリア人"), ("south african", "南アフリカ人")]:
+        meanings = [m for s in lookup(word)[1]["senses"] for m in s["meanings"]]
+        assert expected in meanings
+
+

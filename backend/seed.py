@@ -123,6 +123,23 @@ ENTRIES = {
         ("verb", ["着く", "到着する"]),  # arrive
         ("verb", ["わかる", "理解する"]),  # understand
     ],
+    "english": [
+        ("noun", ["英語"]),
+        ("noun", ["イギリス人", "英国人"]),
+        ("adjective", ["英語の", "イギリスの", "英国の"]),
+    ],
+    "arabic": [
+        ("noun", ["アラビア語"]),
+        ("adjective", ["アラビアの", "アラビア語の"]),
+    ],
+    "arab": [
+        ("noun", ["アラブ人"]),
+        ("adjective", ["アラブの"]),
+    ],
+    "british": [
+        ("noun", ["イギリス人", "英国人"]),
+        ("adjective", ["イギリスの", "英国の"]),
+    ],
     "hang out": [("phrasal verb", ["遊ぶ", "たむろする", "一緒に過ごす"])],
     "gonna": [("contraction", ["〜するつもり", "〜しようとしている"])],
     "wanna": [("contraction", ["〜したい"])],
@@ -133,6 +150,137 @@ ENTRIES = {
         ("noun", ["ラン", "走ること", "連続"]),
     ],
 }
+
+# (English word, country in Japanese, language in Japanese or None)
+# (英語, 国名, 言語名 / なければ None)
+NATIONALITIES = [
+    # Europe / ヨーロッパ
+    ("russian", "ロシア", "ロシア語"),
+    ("ukrainian", "ウクライナ", "ウクライナ語"),
+    ("polish", "ポーランド", "ポーランド語"),
+    ("german", "ドイツ", "ドイツ語"),
+    ("french", "フランス", "フランス語"),
+    ("spanish", "スペイン", "スペイン語"),
+    ("italian", "イタリア", "イタリア語"),
+    ("portuguese", "ポルトガル", "ポルトガル語"),
+    ("dutch", "オランダ", "オランダ語"),
+    ("swedish", "スウェーデン", "スウェーデン語"),
+    ("norwegian", "ノルウェー", "ノルウェー語"),
+    ("danish", "デンマーク", "デンマーク語"),
+    ("finnish", "フィンランド", "フィンランド語"),
+    ("greek", "ギリシャ", "ギリシャ語"),
+    ("turkish", "トルコ", "トルコ語"),
+    ("czech", "チェコ", "チェコ語"),
+    ("hungarian", "ハンガリー", "ハンガリー語"),
+    ("romanian", "ルーマニア", "ルーマニア語"),
+    ("swiss", "スイス", None),
+    ("irish", "アイルランド", "アイルランド語"),
+    ("belgian", "ベルギー", None),
+    ("austrian", "オーストリア", None),
+    # Asia / アジア
+    ("japanese", "日本", "日本語"),
+    ("chinese", "中国", "中国語"),
+    ("korean", "韓国", "韓国語"),
+    ("thai", "タイ", "タイ語"),
+    ("vietnamese", "ベトナム", "ベトナム語"),
+    ("indonesian", "インドネシア", "インドネシア語"),
+    ("filipino", "フィリピン", "フィリピン語"),
+    ("indian", "インド", None),
+    ("pakistani", "パキスタン", None),
+    ("iranian", "イラン", None),
+    ("iraqi", "イラク", None),
+    ("israeli", "イスラエル", None),
+    ("saudi", "サウジアラビア", None),
+    # Americas / 南北アメリカ
+    ("american", "アメリカ", None),
+    ("canadian", "カナダ", None),
+    ("mexican", "メキシコ", None),
+    ("brazilian", "ブラジル", None),
+    ("argentine", "アルゼンチン", None),
+    ("colombian", "コロンビア", None),
+    ("cuban", "キューバ", None),
+    # Oceania / オセアニア
+    ("australian", "オーストラリア", None),
+    # Africa / アフリカ
+    ("egyptian", "エジプト", None),
+    ("nigerian", "ナイジェリア", None),
+    ("kenyan", "ケニア", None),
+    ("ethiopian", "エチオピア", None),
+    # Middle East / 中東
+    ("syrian", "シリア", None),
+    ("lebanese", "レバノン", None),
+    ("jordanian", "ヨルダン", None),
+    ("kuwaiti", "クウェート", None),
+    ("qatari", "カタール", None),
+    ("omani", "オマーン", None),
+    ("yemeni", "イエメン", None),
+    ("bahraini", "バーレーン", None),
+    ("emirati", "アラブ首長国連邦", None),
+    ("afghan", "アフガニスタン", None),
+    # South and Southeast Asia / 南アジア・東南アジア
+    ("bangladeshi", "バングラデシュ", None),
+    ("nepalese", "ネパール", None),
+    ("sri lankan", "スリランカ", None),
+    ("malaysian", "マレーシア", None),
+    ("singaporean", "シンガポール", None),
+    ("cambodian", "カンボジア", None),
+    ("laotian", "ラオス", None),
+    ("taiwanese", "台湾", None),
+    # Africa / アフリカ
+    ("moroccan", "モロッコ", None),
+    ("algerian", "アルジェリア", None),
+    ("tunisian", "チュニジア", None),
+    ("libyan", "リビア", None),
+    ("sudanese", "スーダン", None),
+    ("ghanaian", "ガーナ", None),
+    ("ugandan", "ウガンダ", None),
+    ("tanzanian", "タンザニア", None),
+    ("south african", "南アフリカ", None),
+    ("senegalese", "セネガル", None),
+    ("ivorian", "コートジボワール", None),
+    ("cameroonian", "カメルーン", None),
+    ("zimbabwean", "ジンバブエ", None),
+    ("zambian", "ザンビア", None),
+    ("congolese", "コンゴ", None),
+    ("angolan", "アンゴラ", None),
+    ("rwandan", "ルワンダ", None),
+    ("malian", "マリ", None),
+    # South and Central America, Caribbean / 中南米・カリブ
+    ("chilean", "チリ", None),
+    ("peruvian", "ペルー", None),
+    ("venezuelan", "ベネズエラ", None),
+    ("ecuadorian", "エクアドル", None),
+    ("bolivian", "ボリビア", None),
+    ("uruguayan", "ウルグアイ", None),
+    ("paraguayan", "パラグアイ", None),
+    ("panamanian", "パナマ", None),
+    ("costa rican", "コスタリカ", None),
+    ("guatemalan", "グアテマラ", None),
+    ("honduran", "ホンジュラス", None),
+    ("salvadoran", "エルサルバドル", None),
+    ("nicaraguan", "ニカラグア", None),
+    ("dominican", "ドミニカ共和国", None),
+    ("jamaican", "ジャマイカ", None),
+    ("haitian", "ハイチ", None),
+    ("puerto rican", "プエルトリコ", None),
+    # Europe and Oceania / ヨーロッパ・オセアニア
+    ("cypriot", "キプロス", None),
+    ("monacan", "モナコ", None),
+    ("new zealander", "ニュージーランド", None),
+    # Others
+    ("peruvian", "ペルー", None),
+]
+
+for eng, country, language in NATIONALITIES:
+    senses = [
+        ("noun", [f"{country}人"]),
+        ("adjective", [f"{country}の"]),
+    ]
+    if language:
+        senses.insert(1, ("noun", [language]))
+    # Do not overwrite a hand-written entry of the same word
+    # 同じ単語の手書きエントリがあれば上書きしない
+    ENTRIES.setdefault(eng, senses)
 
 
 def main():
