@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from text_utils import TYPE_JA, normalize
 from anki import AnkiError, add_card
-from lemmatizer import lemmatize, verb_tokens
+from lemmatizer import lemmatize, noun_tokens, rule_lemma, verb_tokens
 from phrases import candidate_phrases
 from html import escape
 from seed import ENTRIES as CURATED
@@ -99,15 +99,13 @@ def find_examples(word: str):
         conn.close()
 
 def find_in_sentence(word: str, sentence: str):
-    # Words used as verbs in this sentence (to reject "strike on" in "A strike on ...")
-    # この文で動詞として使われている単語（名詞の "strike on" などを除外するため）
     verbs = verb_tokens(sentence)
+    nouns = noun_tokens(sentence)
 
     for phrase in candidate_phrases(sentence, word):
-        first = phrase.split()[0]
+        words = phrase.split()
+        first = words[0]
 
-        # Try the exact form, then its lemma
-        # 完全一致、次に基本形の順に試す
         options = [phrase]
         lemma = normalize(lemmatize(phrase))
         if lemma != phrase:
@@ -117,20 +115,47 @@ def find_in_sentence(word: str, sentence: str):
             senses = find_senses(option)
             if not senses:
                 continue
-            # Automatic multi-word entries are too noisy: only accept
-            # phrasal verbs and hand-written (seeded) phrases
-            # 自動生成の複数語エントリはノイズが多いので、句動詞か手書きのものだけ使う
+
             is_phrase = " " in option
             is_phrasal = all(s["type"] == "phrasal verb" for s in senses)
-            if is_phrase and option not in CURATED and not is_phrasal:
+            # Noun compound: noun-only entry made of words used as nouns here
+            # 名詞の複合語: 名詞だけのエントリで、文中でも全部の語が名詞
+            is_compound = (
+                all(s["type"] == "noun" for s in senses)
+                and all(w in nouns for w in words)
+            )
+            if is_phrase and option not in CURATED and not is_phrasal and not is_compound:
                 continue
-            # A phrasal verb must start with a word used as a verb
-            # 句動詞は、動詞として使われている単語で始まる必要がある
-            if all(s["type"] == "phrasal verb" for s in senses) and first not in verbs:
+
+            if is_phrasal and first not in verbs:
                 continue
             return option, senses
     return None
 
+def has_verb(word: str) -> bool:
+    return any(s["type"] == "verb" for s in find_senses(word))
+
+def has_entry(word: str) -> bool:
+    return bool(find_senses(word))
+def prefer_lemma(clean: str):
+    # If "clean" is an inflected form and its base form has an entry, use that
+    # 活用形で、基本形に辞書エントリがあれば、基本形を優先する
+    if clean in CURATED:
+        return None
+
+    # Single words: spelling rules first (staring -> stare)
+    # 1語の場合: まずつづり規則で基本形を探す
+    if " " not in clean:
+        base = rule_lemma(clean, has_verb, has_entry)
+        if base:
+            return base, find_senses(base)
+
+    lemma = normalize(lemmatize(clean))
+    if lemma != clean:
+        senses = find_senses(lemma)
+        if senses:
+            return lemma, senses
+    return None
 @app.get("/lookup", response_model=LookupResult)
 def lookup(word: str, sentence: str = ""):
     clean = normalize(word)
@@ -143,17 +168,16 @@ def lookup(word: str, sentence: str = ""):
         if hit:
             clean, senses = hit
 
-    # 1) Exact match first / まず完全一致
+    # 1) Inflected form with a base-form entry: use the base form
+    # 活用形で基本形に辞書エントリがあれば、基本形を使う
+    if not senses:
+        hit = prefer_lemma(clean)
+        if hit:
+            clean, senses = hit
+
+    # 2) Otherwise the exact match / なければ完全一致
     if not senses:
         senses = find_senses(clean)
-
-    # 2) Retry with the lemma / 見つからなければ見出し語に直して再検索
-    if not senses:
-        lemma = normalize(lemmatize(clean))
-        if lemma != clean:
-            senses = find_senses(lemma)
-            if senses:
-                clean = lemma
 
     if not senses:
         raise HTTPException(status_code=404, detail="Word not found")

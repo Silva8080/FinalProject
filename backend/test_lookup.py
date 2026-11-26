@@ -73,3 +73,12 @@ def test_curated_phrase_matches():
 
 def test_verb_still_matches_phrasal_verb():
     assert lookup("strike", "They strike on a new idea")[1]["word"] == "strike on"
+
+def test_inflected_form_uses_lemma():
+    assert lookup("staring")[1]["word"] == "stare"
+    assert lookup("collapsed")[1]["word"] == "collapse"
+def test_spelling_rule_lemmas():
+    assert lookup("hoping")[1]["word"] == "hope"
+    assert lookup("singing")[1]["word"] == "sing"
+    assert lookup("running")[1]["word"] == "run"
+    assert lookup("starred")[1]["word"] == "star"

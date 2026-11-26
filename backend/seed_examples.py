@@ -125,6 +125,11 @@ EXAMPLES = {
         ("The river runs through the town.", "川は町を流れている。"),
         ("We went for a run.", "走りに行った。"),
     ],
+    "grocery store": [
+        ("I went to the grocery store.", "食料品店に行った。"),
+        ("The grocery store is closed on Sunday.", "その食料品店は日曜日は閉まっている。"),
+        ("There is a grocery store near my house.", "うちの近くに食料品店がある。"),
+    ],
     "every single": [
         ("Every single person agreed.", "全員が一人残らず賛成した。"),
         ("I read every single page.", "1ページも残さず読んだ。"),
