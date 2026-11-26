@@ -199,6 +199,10 @@ def main():
         # Best-ranked group first
         # 順位が良いグループを先頭にする
         built.sort(key=lambda x: x[0])
+        # Drop 'other' groups when a real part of speech exists
+        # 他の品詞があれば 'other' のグループは除外する
+        if any(b[1] != "other" for b in built):
+            built = [b for b in built if b[1] != "other"]
 
         # NEW: drop groups that only match incidentally when a primary group exists
         # NEW: 主な意味のグループがあれば、偶然一致しただけのグループは除外する

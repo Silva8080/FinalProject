@@ -52,5 +52,9 @@ TYPE_JA = {
     "conjunction": "接続詞",
     "contraction": "短縮形",
     "idiom": "イディオム",
+    "preposition": "前置詞",
+    "article": "冠詞",
+    "auxiliary verb": "助動詞",
+    "determiner": "限定詞",
     "other": "その他",
 }

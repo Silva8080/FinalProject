@@ -1,6 +1,8 @@
 import json
 import sqlite3
 from pathlib import Path
+from seed_top_words import TOP_ENTRIES
+
 
 DB_PATH = Path(__file__).parent / "database" / "dictionary.db"
 
@@ -169,6 +171,10 @@ ENTRIES = {
         ("noun", ["北米人", "北アメリカ人"]),
         ("adjective", ["北米の", "北アメリカの"]),
     ],
+    "false": [
+        ("adjective", ["間違った", "誤った", "嘘の", "虚偽の"]),
+        ("adjective", ["偽の", "人工の", "疑似の"]),
+    ],
     "south korea": [("noun", ["韓国", "大韓民国"])],
     "north korea": [("noun", ["北朝鮮", "朝鮮民主主義人民共和国"])],
     "korea": [("noun", ["韓国", "朝鮮半島"])],
@@ -177,7 +183,7 @@ ENTRIES = {
     "european union": [("noun", ["欧州連合", "EU"])],
     "united nations": [("noun", ["国際連合", "国連"])],
 }
-
+ENTRIES.update(TOP_ENTRIES)
 # (English word, country in Japanese, language in Japanese or None)
 # (英語, 国名, 言語名 / なければ None)
 NATIONALITIES = [
